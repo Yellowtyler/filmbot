@@ -108,6 +108,8 @@ public class Controller extends TelegramLongPollingBot{
 
 
 
+
+
         }
 
 
@@ -162,7 +164,7 @@ public class Controller extends TelegramLongPollingBot{
 
         try
         {
-            //TODO чтобы находились только выходящие фильмы
+
             query = filmApi.getApi().getSearch().searchMovie(text,null,"ru",true,1,"ru").getResults().get(0);
         }
 
@@ -217,13 +219,7 @@ public class Controller extends TelegramLongPollingBot{
     }
 
 
-
-
-    //TODO Проверка на удаление
     //TODO меню
-
-
-
 
 
    @Scheduled(cron="0 0 18 * * ?")
@@ -306,7 +302,10 @@ public class Controller extends TelegramLongPollingBot{
         int index = update.getMessage().getText().indexOf(" ");
         String text = update.getMessage().getText().substring(index+1);
         String message="";
-        reminderService.deleteNotif(update.getMessage().getChatId(),text,update.getMessage().getFrom().getUserName());
+        if(reminderService.existsByNameAndChatid(update.getMessage().getChatId(),text))
+        {reminderService.deleteNotif(update.getMessage().getChatId(),text,update.getMessage().getFrom().getUserName());
+            message ="Уведомление о выходе фильма "+ text+" успешно удалено.";
+        }
       /* Iterable<Reminder> reminder = reminderService.getDelete(text,update.getMessage().getChatId());
         String message="";
         if(reminder.iterator().hasNext())
@@ -320,8 +319,9 @@ public class Controller extends TelegramLongPollingBot{
             message="Фильм "+ text +" не найден.";
 
         }*/
-        message="Фильм "+ text +" не найден.";
-        sendMessage(update.getMessage().getChatId(),message);
+      else message="Фильм "+ text +" не найден.";
+
+      sendMessage(update.getMessage().getChatId(),message);
     }
 
 
@@ -335,9 +335,7 @@ public class Controller extends TelegramLongPollingBot{
             message +=reminder.getName()+" - " +reminder.getDate()+"\n";
 
         }
-
         sendMessage(update.getMessage().getChatId(),message);
-
     }
 
 
@@ -348,6 +346,7 @@ public class Controller extends TelegramLongPollingBot{
 
     @Override
     public String getBotToken() {
-        return "1***********:***********";
+        return "1******:*****************";
     }
+
 }

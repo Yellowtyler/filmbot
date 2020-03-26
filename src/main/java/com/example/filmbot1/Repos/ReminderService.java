@@ -20,7 +20,7 @@ public interface ReminderService {
 
   Iterable<Reminder> getFilms(Long chatid);
 
-
+  boolean existsByNameAndChatid( Long chatid, String name);
 
 
 }

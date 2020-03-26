@@ -45,5 +45,10 @@ public class ReminderServiceImp implements ReminderService {
         return reminderRepos.getFilms(chatid);
     }
 
+    @Override
+    public boolean existsByNameAndChatid(Long chatid, String name) {
+        return reminderRepos.existsByNameAndChatid(chatid, name);
+    }
+
 
 }

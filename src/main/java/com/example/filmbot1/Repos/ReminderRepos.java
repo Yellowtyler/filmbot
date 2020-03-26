@@ -27,6 +27,7 @@ public interface ReminderRepos extends CrudRepository<Reminder, Long> {
     @Transactional(readOnly=true)
     Iterable<Reminder> getFilms(@Param("chatid") Long chatid);
 
-
-
+    @Query(value="SELECT CASE WHEN COUNT(u) > 0 THEN 'true' ELSE 'false' END FROM reminder u WHERE u.chatid = :chatid and u.name = :name", nativeQuery = true)
+    @Transactional(readOnly=true)
+    boolean existsByNameAndChatid(@Param("chatid") Long chatid, @Param("name") String name);
 }
