@@ -39,55 +39,25 @@ public class Controller extends TelegramLongPollingBot{
 
   @Override
     public void onUpdateReceived(Update update) {
-        /*if (update.hasMessage() && update.getMessage().hasText()) {
-            SendMessage message = new SendMessage() // Create a SendMessage object with mandatory fields
-                    .setChatId(update.getMessage().getChatId())
-                    .setText(update.getMessage().getText());
-            try {
-                execute(message); // Call method to send the message
-            } catch (TelegramApiException e) {
-                e.printStackTrace();
-            }
-        }*/
-      //  chatId= update.getMessage().getChatId();
+
 
 
 
         if(update.hasMessage()&&update.getMessage().hasText())
         {
-            SendMessage sendMessage=null;
-           /* if(update.getMessage().getText().equals("/hi"))
-            {
-                User user = update.getMessage().getFrom();
-
-             sendMessage=new SendMessage().setChatId(update.getMessage().getChatId()).setText("Hello "+user.getUserName());
-
-
-            }
-*/
-
-
-
 
            if(update.getMessage().getText().startsWith("/start")) {
-               String message="Добро пожаловать! Чтобы добавить новое напоминание о выходе фильме, введите /sendnotif название фильма";
+               String message="Добро пожаловать! Чтобы добавить новое напоминание о выходе фильме введите /addnotif название фильма." +
+                       "Чтобы посмотреть ваши уведомления введите /shownotif. Если вы хотите удалить уведомления, то введите /deletenotif название фильма." +
+                       "Введите /help, если забыли команды. ";
                sendMessage(update.getMessage().getChatId(), message);
 
            }
              int index = update.getMessage().getText().indexOf(" ");
 
-           /*  if(update.getMessage().getText().startsWith("/movie")&&index>-1)
-             {
-               String text = update.getMessage().getText().substring(index);
 
 
-
-                MovieDb query = filmApi.getApi().getSearch().searchMovie(text,null,"en",true,1,"ru").getResults().get(0);
-                String textq = query.getTitle() +"\n" +query.getVoteAverage() + "\n"+query.getOverview() + "\n" +query.getImages();
-                 sendMessage=new SendMessage().setChatId(update.getMessage().getChatId()).setText(textq);
-             }
-*/
-            if(update.getMessage().getText().startsWith("/upcomingmovie"))
+            if(update.getMessage().getText().startsWith("/upcomingmovies"))
             {
 
 
@@ -107,7 +77,14 @@ public class Controller extends TelegramLongPollingBot{
                 sendMessage(update.getMessage().getChatId(),textq);
 
             }
-            //TODO сделать описание бота /start
+            if(update.getMessage().getText().startsWith("/help"))
+            {
+                String message ="/addnotif название фильма - добавить новое уведомление\n"+
+                        "/shownotif - посмотреть свои уведомления\n" +
+                        "/deletenotif название фильма - удалить уведомление";
+
+                sendMessage(update.getMessage().getChatId(),message);
+            }
             //TODO напоминание для сериалов
             if(update.getMessage().getText().startsWith("/addnotif")&&index>-1) {
 
@@ -180,11 +157,12 @@ public class Controller extends TelegramLongPollingBot{
     private void AddNotif(Update update) {
 
         int index = update.getMessage().getText().indexOf(" ");
-        String text = update.getMessage().getText().substring(index);
+        String text = update.getMessage().getText().substring(index+1);
         MovieDb query=null;
 
         try
         {
+            //TODO чтобы находились только выходящие фильмы
             query = filmApi.getApi().getSearch().searchMovie(text,null,"ru",true,1,"ru").getResults().get(0);
         }
 
@@ -241,10 +219,10 @@ public class Controller extends TelegramLongPollingBot{
 
 
 
-    //TODO сделать отмену отправки уведомлений
-    //TODO исправить проблему с id в базе данных
+    //TODO Проверка на удаление
     //TODO меню
-    //TODO показать добавленные уведомления
+
+
 
 
 
@@ -326,9 +304,23 @@ public class Controller extends TelegramLongPollingBot{
     private void DeleteNotif(Update update)
     {
         int index = update.getMessage().getText().indexOf(" ");
-        String text = update.getMessage().getText().substring(index);
-        reminderService.deleteNotif(update.getMessage().getChatId(),text);
-        String message ="Уведомление успешно удалено.";
+        String text = update.getMessage().getText().substring(index+1);
+        String message="";
+        reminderService.deleteNotif(update.getMessage().getChatId(),text,update.getMessage().getFrom().getUserName());
+      /* Iterable<Reminder> reminder = reminderService.getDelete(text,update.getMessage().getChatId());
+        String message="";
+        if(reminder.iterator().hasNext())
+        {
+
+            message ="Уведомление успешно удалено.";
+            reminderService.delete(reminder.iterator().next());
+        }
+        else
+        {
+            message="Фильм "+ text +" не найден.";
+
+        }*/
+        message="Фильм "+ text +" не найден.";
         sendMessage(update.getMessage().getChatId(),message);
     }
 
@@ -337,11 +329,10 @@ public class Controller extends TelegramLongPollingBot{
     private void ShowNotif(Update update)
     {
         Iterable<Reminder> reminders = reminderService.getFilms(update.getMessage().getChatId());
-        String message="";
+        String message="Ваши уведомления: "+"\n";
         for(Reminder reminder:reminders)
         {
             message +=reminder.getName()+" - " +reminder.getDate()+"\n";
-
 
         }
 
@@ -357,6 +348,6 @@ public class Controller extends TelegramLongPollingBot{
 
     @Override
     public String getBotToken() {
-        return "1*******:**************";
+        return "1***********:***********";
     }
 }

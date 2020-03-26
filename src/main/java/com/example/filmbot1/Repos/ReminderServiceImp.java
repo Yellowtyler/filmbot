@@ -4,6 +4,7 @@ import com.example.filmbot1.Model.Reminder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.Iterator;
+import java.util.List;
 
 @Service
 public class ReminderServiceImp implements ReminderService {
@@ -35,8 +36,8 @@ public class ReminderServiceImp implements ReminderService {
     }
 
     @Override
-    public void deleteNotif(Long chatid, String name) {
-      reminderRepos.deleteNotif(chatid,name);
+    public void deleteNotif(Long chatid, String name, String username) {
+      reminderRepos.deleteNotif(chatid,name, username);
     }
 
     @Override

@@ -20,11 +20,13 @@ public interface ReminderRepos extends CrudRepository<Reminder, Long> {
 
     @Modifying
     @Transactional
-    @Query(value="delete from reminder e where e.chatid=:chatid and e.name=:name",nativeQuery = true)
-    void deleteNotif(@Param("chatid") Long chatid, @Param("name") String name);
+    @Query(value="delete from reminder e where e.chatid=:chatid and e.name=:name and e.username=:username",nativeQuery = true)
+    void deleteNotif(@Param("chatid") Long chatid, @Param("name") String name,@Param("username") String username);
 
     @Query(value="select e.id, e.chatid, e.name, e.username, e.date from reminder e where e.chatid=:chatid",nativeQuery = true)
     @Transactional(readOnly=true)
     Iterable<Reminder> getFilms(@Param("chatid") Long chatid);
+
+
 
 }
