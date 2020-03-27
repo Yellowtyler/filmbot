@@ -25,9 +25,20 @@ public interface ReminderRepos extends CrudRepository<Reminder, Long> {
 
     @Query(value="select e.id, e.chatid, e.name, e.username, e.date from reminder e where e.chatid=:chatid",nativeQuery = true)
     @Transactional(readOnly=true)
-    Iterable<Reminder> getFilms(@Param("chatid") Long chatid);
+    Iterable<Reminder> getReminders(@Param("chatid") Long chatid);
 
     @Query(value="SELECT CASE WHEN COUNT(u) > 0 THEN 'true' ELSE 'false' END FROM reminder u WHERE u.chatid = :chatid and u.name = :name", nativeQuery = true)
     @Transactional(readOnly=true)
     boolean existsByNameAndChatid(@Param("chatid") Long chatid, @Param("name") String name);
+
+
+    @Query(value =" SELECT DISTINCT u.name FROM reminder u", nativeQuery = true)
+    @Transactional(readOnly=true)
+    Iterable<String> getFilms();
+
+    @Modifying
+    @Transactional
+    @Query(value="update Reminder r set r.date=?1 where r.name=?2")
+    void updateNotif( String date, String name);
+
 }

@@ -41,13 +41,23 @@ public class ReminderServiceImp implements ReminderService {
     }
 
     @Override
-    public Iterable<Reminder> getFilms(Long chatid) {
-        return reminderRepos.getFilms(chatid);
+    public Iterable<Reminder> getReminders(Long chatid) {
+        return reminderRepos.getReminders(chatid);
     }
 
     @Override
     public boolean existsByNameAndChatid(Long chatid, String name) {
         return reminderRepos.existsByNameAndChatid(chatid, name);
+    }
+
+    @Override
+    public Iterable<String> getFilms() {
+        return reminderRepos.getFilms();
+    }
+
+    @Override
+    public void updateNotif(String date, String name) {
+        reminderRepos.updateNotif(date, name);
     }
 
 

@@ -18,9 +18,12 @@ public interface ReminderService {
 
   void deleteNotif(Long chatid, String name, String username);
 
-  Iterable<Reminder> getFilms(Long chatid);
+  Iterable<Reminder> getReminders(Long chatid);
 
   boolean existsByNameAndChatid( Long chatid, String name);
 
+  Iterable<String> getFilms();
+
+  void updateNotif(String date, String name);
 
 }

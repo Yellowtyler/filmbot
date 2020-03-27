@@ -25,7 +25,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
-import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE;
+
 
 @Component
 public class Controller extends TelegramLongPollingBot{
@@ -36,78 +36,113 @@ public class Controller extends TelegramLongPollingBot{
     @Autowired
     private ReminderService reminderService;
 
-
-  @Override
+    private String OldMessage="";
+    private boolean isAdded;
+    @Override
     public void onUpdateReceived(Update update) {
-
-
-
 
         if(update.hasMessage()&&update.getMessage().hasText())
         {
 
-           if(update.getMessage().getText().startsWith("/start")) {
-               String message="Добро пожаловать! Чтобы добавить новое напоминание о выходе фильме введите /addnotif название фильма." +
-                       "Чтобы посмотреть ваши уведомления введите /shownotif. Если вы хотите удалить уведомления, то введите /deletenotif название фильма." +
-                       "Введите /help, если забыли команды. ";
-               sendMessage(update.getMessage().getChatId(), message);
+            int index = update.getMessage().getText().indexOf(" ");
 
-           }
-             int index = update.getMessage().getText().indexOf(" ");
+            if(OldMessage.isEmpty()) {
+
+                if (update.getMessage().getText().startsWith("/start")) {
+                    String message = "Добро пожаловать!\n\nЧтобы добавить новое уведомление о выходе фильма\nвведите /add название фильма.\n\n" +
+                            "Чтобы посмотреть ваши уведомления введите /show.\n\nЕсли вы хотите удалить уведомления,\nто введите /delete название фильма.\n\n" +
+                            "Введите /help, если забыли команды.";
+                    sendMessage(update.getMessage().getChatId(), message);
+
+                }
+                else if (update.getMessage().getText().startsWith("/upcomingmovies")) {
+
+                    List<MovieDb> query = filmApi.getApi().getMovies().getUpcoming("ru", 1, "ru").getResults();
+                    String textq = "";
+
+                    for (MovieDb movieDb : query) {
+                        if (findDiffDays(movieDb.getReleaseDate()) >= 0) {
+                            textq += movieDb.getTitle() + "\n" + movieDb.getId() + "\n" + movieDb.getReleaseDate() + "\n" + movieDb.getOverview() + "\n" + movieDb.getStatus() + "\n" + "***********";
+                        }
 
 
-
-            if(update.getMessage().getText().startsWith("/upcomingmovies"))
-            {
+                    }
 
 
-                List<MovieDb> query = filmApi.getApi().getMovies().getUpcoming("ru",1,null).getResults();
-                String textq="";
+                    sendMessage(update.getMessage().getChatId(), textq);
 
-                for (MovieDb movieDb: query) {
-                      if(findDiffDays(movieDb.getReleaseDate())>=0)
-                      {
-                         textq+=movieDb.getTitle()+"\n" +movieDb.getId()+"\n"+ movieDb.getReleaseDate()+"\n"+movieDb.getOverview()+ "\n"+movieDb.getStatus()+"\n"+"***********";
-                      }
+                }
+                else if (update.getMessage().getText().startsWith("/help")) {
+                    String message = "/add название фильма - добавить новое уведомление\n" +
+                            "/show - посмотреть свои уведомления\n" +
+                            "/delete название фильма - удалить уведомление";
 
+                    sendMessage(update.getMessage().getChatId(), message);
+                }
+
+                else if (update.getMessage().getText().startsWith("/add")) {
+
+                    if(index > -1)  AddNotif(update);
+
+                    else
+                    {
+                        OldMessage = update.getMessage().getText();
+                        isAdded=true;
+                        String message = "Введите название фильма, по которому вы хотите получать уведомления.";
+                        sendMessage(update.getMessage().getChatId(), message);
+
+                    }
+
+                }
+
+                else if (update.getMessage().getText().startsWith("/delete") ) {
+
+                  if(index>-1)  DeleteNotif(update);
+
+                  else
+                  {
+                      OldMessage = update.getMessage().getText();
+                      isAdded=false;
+                      String message = "Введите название фильма, по которому вы больше не хотите получать уведомления.";
+                      sendMessage(update.getMessage().getChatId(), message);
+                  }
 
                 }
 
 
-                sendMessage(update.getMessage().getChatId(),textq);
 
+                else if (update.getMessage().getText().startsWith("/show")) {
+
+                    ShowNotif(update);
+
+                }
+
+                else {
+
+                    String message = "Команда набрана неверно! Для справки введите /help";
+                    sendMessage(update.getMessage().getChatId(), message);
+
+
+                }
             }
-            if(update.getMessage().getText().startsWith("/help"))
+
+
+            else
             {
-                String message ="/addnotif название фильма - добавить новое уведомление\n"+
-                        "/shownotif - посмотреть свои уведомления\n" +
-                        "/deletenotif название фильма - удалить уведомление";
+                if(isAdded)
+                {
+                    AddNotif(update);
 
-                sendMessage(update.getMessage().getChatId(),message);
-            }
-            //TODO напоминание для сериалов
-            if(update.getMessage().getText().startsWith("/addnotif")&&index>-1) {
+                }
 
-               AddNotif(update);
+                else
+                {
+                    DeleteNotif(update);
+                }
 
-            }
-
-            if(update.getMessage().getText().startsWith("/deletenotif")&&index>-1) {
-
-                 DeleteNotif(update);
+                OldMessage="";
 
             }
-
-
-
-            if(update.getMessage().getText().startsWith("/shownotif")) {
-
-              ShowNotif(update);
-
-            }
-
-
-
 
 
         }
@@ -119,7 +154,7 @@ public class Controller extends TelegramLongPollingBot{
         SendMessage sendMessage = new SendMessage().setChatId(chatId).setText(message);
 
         try {
-            // setButtons(sendMessage);
+            setButtons(sendMessage);
             execute(sendMessage);
         } catch (TelegramApiException e) {
             e.printStackTrace();
@@ -136,7 +171,9 @@ public class Controller extends TelegramLongPollingBot{
         replyKeyboardMarkup.setOneTimeKeyboard(false);
         List<KeyboardRow> keyboardRows = new ArrayList<>();
         KeyboardRow firstRow = new KeyboardRow();
-        firstRow.add("/sendnotif");
+        firstRow.add("/add");
+        firstRow.add("/show");
+        firstRow.add("/delete");
         keyboardRows.add(firstRow);
         replyKeyboardMarkup.setKeyboard(keyboardRows);
 
@@ -158,13 +195,14 @@ public class Controller extends TelegramLongPollingBot{
 
     private void AddNotif(Update update) {
 
-        int index = update.getMessage().getText().indexOf(" ");
+        int index =-1;
+        if(update.getMessage().getText().contains("/add"))
+        { index = update.getMessage().getText().indexOf(" ");}
         String text = update.getMessage().getText().substring(index+1);
         MovieDb query=null;
 
         try
         {
-
             query = filmApi.getApi().getSearch().searchMovie(text,null,"ru",true,1,"ru").getResults().get(0);
         }
 
@@ -183,29 +221,24 @@ public class Controller extends TelegramLongPollingBot{
 
             if (diffDays < 0) {
                 message = "Фильм " + query.getTitle() + " уже вышел! Дата релиза: " + query.getReleaseDate() + ".";
-            } else if (diffDays == 0) {
+            }
+            else if (diffDays == 0) {
                 message = "Фильм " + query.getTitle() + " вышел сегодня!";
-            } else {
+            }
+            else {
                 Reminder rem = new Reminder();
-                rem.setName(query.getTitle());
+               rem.setName(query.getTitle());
                 rem.setDate(query.getReleaseDate());
                 User user = update.getMessage().getFrom();
                 rem.setUsername(user.getUserName());
                 rem.setChatid(update.getMessage().getChatId());
-                    /*rem.setName("ff");
-                    rem.setDate("2020-04-01");
-                    User user = update.getMessage().getFrom();
-                    rem.setUsername(user.getUserName());
-                    rem.setChatid(update.getMessage().getChatId());*/
 
-                //message = query.getReleaseDate();
 
-                //reminderService.save(rem);
-
-                if (reminderService.check(update.getMessage().getChatId(), query.getTitle(), query.getReleaseDate())) {
+              if (reminderService.check(update.getMessage().getChatId(), query.getTitle(), query.getReleaseDate())) {
                     reminderService.save(rem);
                     message = "Фильм "+ query.getTitle()+" добавлен! Не забудьте включить уведомления бота!";
-                } else {
+                }
+                else {
                     message = "Уведомления о выходе этого фильма уже приходят.";
                 }
             }
@@ -219,13 +252,11 @@ public class Controller extends TelegramLongPollingBot{
     }
 
 
-    //TODO меню
 
-
-   @Scheduled(cron="0 0 18 * * ?")
+    @Scheduled(cron="0 0 18 * * ?")
     private void SendNotific()
     {
-
+      updateDateRelease();
       String message = "";
       Map<String,Long> hashMap = new HashMap<String, Long>();
       Iterable<Reminder> reminders = reminderService.findAll();
@@ -236,45 +267,44 @@ public class Controller extends TelegramLongPollingBot{
 
      while(iter.hasNext()) {
           Reminder reminder = iter.next();
-          if (hashMap.containsKey(reminder.getDate()))
+          if(reminder.getDate().contains("unknown"))
           {
-              diffdate=hashMap.get(reminder.getDate());
+              message="Дата выхода фильма "+ reminder.getName() + " неизвестна. Ждите обновления, возможно, фильм " +
+                  "перенесли на другую дату.";
 
           }
-
-          else
-          {
-              diffdate=findDiffDays(reminder.getDate());
-              hashMap.put(reminder.getDate(),diffdate);
-          }
-
-          if(diffdate==1)
-          {
-
-              message="Фильм " + reminder.getName() +" выходит завтра!";
-
-          }
-
-          else if(diffdate==0)
-          {
-
-              message="Фильм " + reminder.getName() +" сегодня вышел!";
-              flag=true;
-          }
-
-          else
-         {
-             for(int i=0;i<daysToRemind.length;i++)
-          {
-
-              if(diffdate==daysToRemind[i])
-              {
-                  message="До выхода фильма " + reminder.getName() +" осталось " + diffdate+" дней. Дата релиза: " +reminder.getDate()+".";
-                  break;
+          else {
+              if (hashMap.containsKey(reminder.getDate())) {
+                  diffdate = hashMap.get(reminder.getDate());
               }
 
+              else {
+                  diffdate = findDiffDays(reminder.getDate());
+                  hashMap.put(reminder.getDate(), diffdate);
+              }
+
+              if (diffdate == 1) {
+
+                  message = "Фильм " + reminder.getName() + " выходит завтра!";
+
+              }
+
+              else if (diffdate <= 0) {
+                  message = "Фильм " + reminder.getName() + " сегодня вышел!";
+                  flag = true;
+              }
+
+              else {
+                  for (int i = 0; i < daysToRemind.length; i++) {
+
+                      if (diffdate == daysToRemind[i]) {
+                          message = "До выхода фильма " + reminder.getName() + " осталось " + diffdate + " дней. Дата релиза: " + reminder.getDate() + ".";
+                          break;
+                      }
+
+                  }
+              }
           }
-         }
           if(!message.isEmpty())
           {
               SendMessage sendMessage = new SendMessage().setChatId(reminder.getChatid()).setText(message);
@@ -295,30 +325,43 @@ public class Controller extends TelegramLongPollingBot{
 
     }
 
+    private void updateDateRelease() {
+        Iterable<String> films = reminderService.getFilms();
+        MovieDb query=null;
+        String date="";
+        for(String film: films)
+        {
+            query = filmApi.getApi().getSearch().searchMovie(film,null,"ru",true,1,"ru").getResults().get(0);
+            if(query.getReleaseDate()!=null)
+            {
+                date=query.getReleaseDate();
+            }
+
+            else
+            {
+                date="unknown";
+
+            }
+
+            reminderService.updateNotif(date,film);
+        }
+
+    }
 
 
     private void DeleteNotif(Update update)
     {
-        int index = update.getMessage().getText().indexOf(" ");
+        int index =-1;
+        if(update.getMessage().getText().contains("/delete"))
+        { index = update.getMessage().getText().indexOf(" ");}
+
         String text = update.getMessage().getText().substring(index+1);
         String message="";
         if(reminderService.existsByNameAndChatid(update.getMessage().getChatId(),text))
         {reminderService.deleteNotif(update.getMessage().getChatId(),text,update.getMessage().getFrom().getUserName());
             message ="Уведомление о выходе фильма "+ text+" успешно удалено.";
         }
-      /* Iterable<Reminder> reminder = reminderService.getDelete(text,update.getMessage().getChatId());
-        String message="";
-        if(reminder.iterator().hasNext())
-        {
 
-            message ="Уведомление успешно удалено.";
-            reminderService.delete(reminder.iterator().next());
-        }
-        else
-        {
-            message="Фильм "+ text +" не найден.";
-
-        }*/
       else message="Фильм "+ text +" не найден.";
 
       sendMessage(update.getMessage().getChatId(),message);
@@ -328,7 +371,7 @@ public class Controller extends TelegramLongPollingBot{
 
     private void ShowNotif(Update update)
     {
-        Iterable<Reminder> reminders = reminderService.getFilms(update.getMessage().getChatId());
+        Iterable<Reminder> reminders = reminderService.getReminders(update.getMessage().getChatId());
         String message="Ваши уведомления: "+"\n";
         for(Reminder reminder:reminders)
         {
@@ -346,7 +389,7 @@ public class Controller extends TelegramLongPollingBot{
 
     @Override
     public String getBotToken() {
-        return "1******:*****************";
+        return "***********************";
     }
 
 }

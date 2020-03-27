@@ -9,7 +9,7 @@ public class FilmApi {
 
     TmdbApi getApi()
     {
-        return new TmdbApi("b********************");
+        return new TmdbApi("******************");
     }
 
 
